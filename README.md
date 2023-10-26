@@ -1,14 +1,6 @@
-# Hackathon-Template
+# Bidirectional Paper-Repository Traceability
 
-This is a template repo for external hackathon projects. Please build your project off of this template:
-1. Click the ‘use this template’ button above to create a new repository, and choose an appropriate name for your project. The suggested naming scheme is: `SoftwareImpactHackathon2023_PROJECT`.
-2. Turn on basic [security features](https://docs.github.com/en/code-security/getting-started/github-security-features) for your repository under Settings -> Security and Analysis. We strongly recommend you enable at least [Private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/working-with-repository-security-advisories/configuring-private-vulnerability-reporting-for-a-repository), [Dependabot security updates](https://docs.github.com/en/code-security/dependabot/dependabot-security-updates/configuring-dependabot-security-updates) and [Secret Scanning](https://docs.github.com/en/code-security/secret-scanning/configuring-secret-scanning-for-your-repositories).
-3. Add your project link and description to the list of hackathon projects we’re curating at https://github.com/chanzuckerberg/software-impact-hackathon-2023 , by making a pull request to that repo.
-4. Add your name or an appropriate copyright owner to the LICENSE file. CZI will not own the code in your repository.
-5. [Grant privileges](https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-access-to-your-personal-repositories/inviting-collaborators-to-a-personal-repository)  to other collaborators, if desired.
-6. Replace this section of the readme and the above "Hackathon-Template" heading with an appropriate readme and title for your project.
-
-*Please do not modify or delete any other part of the readme below this line.*
+There's a gap between academic papers and data/code repositories due to the absence of bidirectional links. We propose to develop a tool that connects scientific papers to their relevant GitHub repositories and vice versa. Our approach involves devising algorithms to search both academic platforms and GitHub for mutual references, integrating features into the tool for automatic link creation, and incorporating capabilities to auto-comment on platforms like arXiv when a corresponding GitHub repository is detected. Ultimately, we aim to promote the significance of traceability, emphasizing its importance to both the academic and developer communities.
 
 ***
 
