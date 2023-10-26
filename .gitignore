@@ -1,0 +1,5 @@
+logs/*
+sources/*
+pdfs/*
+gold.csv
+_downloader.py
