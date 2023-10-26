@@ -1,70 +1,99 @@
-import logging
 import os
 import requests
 import arxiv
 import tarfile
+import time
 
-logger = logging.getLogger("ArXiV")
+
+def ensure_directory_exists(dir_name):
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
 
 
-class ArXiVDownloader:
-    def get_latex(search_query="au:Treude", dir="sources"):
-        if not os.path.exists(dir):
-            os.makedirs(dir)
+def construct_download_url(arxiv_id):
+    if "/" in arxiv_id:
+        return f"https://arxiv.org/e-print/cs/{arxiv_id}"
+    return f"https://arxiv.org/e-print/{arxiv_id}"
 
-        search = arxiv.Search(query=search_query)
-        for paper in search.get():
-            # Check if the paper was published in 2023
-            if paper.published.year != 2023:
-                continue
 
-            # Extract the arXiv ID from the entry_id URL
-            arxiv_id = paper.entry_id.split("/")[-1]
-            filename = f"{arxiv_id}.tar.gz"
-            download_url = f"https://arxiv.org/e-print/{arxiv_id}"
+def download_source(download_url, paper_title):
+    print(f"Downloading sources for {paper_title}...")
 
-            try:
-                logger.debug(f"Downloading sources for {paper.title}...")
-                # Fetch the source archive directly using requests
-                response = requests.get(download_url, stream=True)
-                response.raise_for_status()
+    response = requests.get(download_url, stream=True)
+    response.raise_for_status()
 
-                # Save the fetched content to the desired location
-                with open(os.path.join(dir, filename), "wb") as f:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        f.write(chunk)
+    filename = f"{download_url.split('/')[-1]}.tar.gz"
+    file_path = os.path.join("sources", filename)
+    with open(file_path, 'wb') as f:
+        for chunk in response.iter_content(chunk_size=8192):
+            f.write(chunk)
+    
+    return file_path
 
-                logger.debug(f"Sources for {paper.title} downloaded successfully!")
 
-            except Exception as e:
-                logger.error(
-                    f"Failed to download sources for {paper.title}. Error: {e}"
-                )
+def extract_files(file_path):
+    folder_name = file_path.rsplit('.', 2)[0]
+    folder_path = os.path.join("sources", folder_name)
 
-        logger.debug("Download complete! Now extracting archives...")
+    os.makedirs(folder_path, exist_ok=True)
 
-        source_directory = dir
-        # Loop through each file in the source directory
-        for filename in os.listdir(source_directory):
-            if filename.endswith(".tar.gz"):
-                file_path = os.path.join(source_directory, filename)
+    print(f"Extracting {file_path} to {folder_path}...")
+    try:
+        with tarfile.open(file_path, 'r:gz') as archive:
+            for member in archive.getmembers():
+                if member.name.endswith(('.tex', '.bbl')):
+                    archive.extract(member, path=folder_path)
+    except (tarfile.ReadError, EOFError) as e:
+        print(f"Error extracting {file_path}. Reason: {e}. Skipping...")
 
-                # Construct directory name based on the filename (without extension)
-                extract_dir = os.path.join(source_directory, filename[:-7])
+    os.remove(file_path)
+    return folder_path
 
-                if not os.path.exists(extract_dir):
-                    os.makedirs(extract_dir)
 
-                # Extract the tar.gz file into its directory
-                with tarfile.open(file_path, "r:gz") as archive:
-                    valid_files = [
-                        member
-                        for member in archive.getmembers()
-                        if member.name.endswith((".tex", ".bbl"))
-                    ]
-                    archive.extractall(path=extract_dir, members=valid_files)
+def clean_directory(directory):
+    for entry_name in os.listdir(directory):
+        entry_path = os.path.join(directory, entry_name)
 
-                # Delete the original tar.gz file
-                os.remove(file_path)
+        if os.path.isdir(entry_path):
+            clean_directory(entry_path)
+        elif not entry_name.endswith(('.tex', '.bbl')):
+            os.remove(entry_path)
 
-        logger.debug("Extraction complete!")
+
+def process_paper(paper, downloaded_count):
+    arxiv_id = paper.entry_id.split('/')[-1]
+    download_url = construct_download_url(arxiv_id)
+
+    try:
+        file_path = download_source(download_url, paper.title)
+        folder_path = extract_files(file_path)
+        clean_directory(folder_path)
+
+        print(f"Processed sources for {paper.title} (Total: {downloaded_count} sources processed)")
+    except Exception as e:
+        print(f"Failed to process sources for {paper.title}. Error: {e}")
+
+
+def main():
+    ensure_directory_exists("sources")
+
+    search = arxiv.Search(
+        query="cat:cs.SE",
+        sort_by=arxiv.SortCriterion.SubmittedDate,
+        sort_order=arxiv.SortOrder.Descending
+    )
+
+    downloaded_count = 0
+    for paper in search.get():
+        if downloaded_count >= 1000:
+            break
+        process_paper(paper, downloaded_count+1)
+        downloaded_count += 1
+
+        time.sleep(3)
+
+    print("All papers processed!")
+
+
+if __name__ == '__main__':
+    main()
