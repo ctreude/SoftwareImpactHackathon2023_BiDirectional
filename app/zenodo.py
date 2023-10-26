@@ -1,6 +1,5 @@
 import requests
 import logging
-from urllib.parse import urljoin
 import re
 
 from .doi import get_redirect_url
@@ -16,7 +15,7 @@ class ZenodoAPI:
     def _get_record(self, recid):
         url = f"{self.base_url}/{recid}"
         logger.debug(f"Final URL: `{url}`")
-        return requests.get(url).text
+        return requests.get(url).text, url
 
     def get_record(self, url_or_doi):
         logger.debug(f"Fetching Zenodo record metadata for `{url_or_doi}`")

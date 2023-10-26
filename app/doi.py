@@ -5,21 +5,20 @@ import requests
 
 logger = logging.getLogger("DOI")
 
+DOI_REGEX = r"^10\.\d{4,9}/[-._;()/:A-Z0-9]+$"
+DOI_URL_REGEX = r"https:\/\/doi\.org\/10\.\d+\/[a-zA-Z0-9\._%~-]+"
+
 
 def is_valid_doi(doi):
-    # Define the regex pattern for a valid DOI
-    doi_pattern = r"^10\.\d{4,9}/[-._;()/:A-Z0-9]+$"
-
     # Use re.match to check if the input matches the pattern
-    if re.match(doi_pattern, doi, re.IGNORECASE):
+    if re.match(DOI_REGEX, doi, re.IGNORECASE):
         return True
     else:
         return False
 
 
 def get_valid_url(doi_url):
-    doi_url_pattern = r"https:\/\/doi\.org\/10\.\d+\/[a-zA-Z0-9\._%~-]+"
-    match = re.search(doi_url_pattern, doi_url)
+    match = re.search(DOI_URL_REGEX, doi_url)
     # fails if invalid
     return match.group(0)
 
