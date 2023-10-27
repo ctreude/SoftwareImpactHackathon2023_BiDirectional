@@ -2,6 +2,50 @@
 
 There's a gap between academic papers and data/code repositories due to the absence of bidirectional links. We propose to develop a tool that connects scientific papers to their relevant GitHub repositories and vice versa. Our approach involves devising algorithms to search both academic platforms and GitHub for mutual references, integrating features into the tool for automatic link creation, and incorporating capabilities to auto-comment on platforms like arXiv when a corresponding GitHub repository is detected. Ultimately, we aim to promote the significance of traceability, emphasizing its importance to both the academic and developer communities.
 
+This tool provides functionality to establish and check bidirectional traceability between academic papers and their respective code repositories. It supports operations with PDF and LaTeX files, specifically focusing on ArXiV sources.
+
+## Features:
+
+1. **Download Sources**: Allows users to download either PDF or LaTeX files from ArXiV based on a specified query.
+2. **Run**: It checks for bidirectional links between papers and repositories using either PDF or LaTeX files. Internally, it interacts with both GitHub and Zenodo platforms.
+3. **Extract PDFs**: Uses Tika to extract content from all PDFs.
+4. **Merge LaTeX**: Merges all LaTeX files embedding citations.
+5. **Clean Sources**: Provides an option to clean precomputed content of either PDF or LaTeX files.
+
+## Usage:
+
+The main entry point for this tool uses a command-line interface:
+
+### Downloading Sources:
+```bash
+python main.py download --type [pdf|latex] --query YOUR_QUERY
+```
+Here, replace `YOUR_QUERY` with your specific search term for ArXiV.
+
+### Checking Bidirectional Links:
+```bash
+python main.py run --type [pdf|latex]
+```
+
+### Extracting PDFs:
+```bash
+python main.py extract-pdfs
+```
+
+### Merging LaTeX:
+```bash
+python main.py merge-latex
+```
+
+### Cleaning Precomputed Sources:
+```bash
+python main.py clean --type [pdf|latex]
+```
+
+## Setup:
+
+Before running the tool, ensure that the `GITHUB_TOKEN` environment variable is set with your GitHub access token. You can obtain a token [here](https://github.com/settings/tokens).
+
 ***
 
 ## About this project
