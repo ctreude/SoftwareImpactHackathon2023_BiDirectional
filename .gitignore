@@ -1,6 +1,8 @@
 logs/*
 sources/*
 pdfs/*
-gold.csv
+*.csv
+*.xls
+*.xlsx
 _downloader.py
 results.csv

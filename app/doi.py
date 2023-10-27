@@ -1,12 +1,14 @@
-import re
 import logging
-from .utils import is_valid_url
+import re
+
 import requests
+
+from .utils import is_valid_url
 
 logger = logging.getLogger("DOI")
 
 DOI_REGEX = r"^10\.\d{4,9}/[-._;()/:A-Z0-9]+$"
-DOI_URL_REGEX = r"https:\/\/doi\.org\/10\.\d+\/[a-zA-Z0-9\._%~-]+"
+DOI_URL_REGEX = r"https?:\/\/doi\.org\/10.5281/zenodo.[0-9]+"
 
 
 def is_valid_doi(doi):
@@ -38,9 +40,13 @@ def get_redirect_url(doi):
         logger.debug(f"Resolving DOI for `{doi_url}`")
         response = requests.get(doi_url, allow_redirects=False)
 
+        logger.debug(f"DOI response: `{response.text}`")
+
         # Check if the response has a 'Location' header
-        if "Location" in response.headers:
-            location = response.headers["Location"]
+        if "Location" in response.headers or "location" in response.headers:
+            location = response.headers.get("Location") or response.headers.get(
+                "location"
+            )
             logger.debug(f"Response: {location}")
             return location
         else:

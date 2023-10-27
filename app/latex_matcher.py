@@ -1,18 +1,21 @@
-import re
+import csv
 import glob
 import logging
-import json
 import os
-import csv
-from .merger import Merger
+import re
+from datetime import datetime
 
-logger = logging.getLogger("Matcher")
+from .errors import LatexMergedNotFound
 
-GITHUB_REGEX = r"^(?=.*https:\/\/github\.com\/([a-zA-Z0-9-]+)\/([a-zA-Z0-9_.-]+))(?=.*(?:code|data|script)).*$|^(?=.*https:\/\/github\.com\/([a-zA-Z0-9-]+)\/([a-zA-Z0-9_.-]+)).*$\n^.*(?:code|data|script).*$|^.*(?:code|data|script).*$\n(?=.*https:\/\/github\.com\/([a-zA-Z0-9-]+)\/([a-zA-Z0-9_.-]+)).*"
-ZENODO_REGEX = r"^(?=.*https:\/\/(doi\.org\/10\.5281\/zenodo\.\d+|zenodo\.org\/record\/\d+))(?=.*(?:code|data|script)).*$|^(?=.*https:\/\/(doi\.org\/10\.5281\/zenodo\.\d+|zenodo\.org\/record\/\d+)).*$\n^.*(?:code|data|script).*$|^.*(?:code|data|script).*$\n(?=.*https:\/\/(doi\.org\/10\.5281\/zenodo\.\d+|zenodo\.org\/record\/\d+)).*"
-GITHUB_URL_REGEX = r"https?://github.com/([a-zA-Z0-9-]+)/([a-zA-Z0-9_.-]+)"
-ZENODO_URL_REGEX = r"https?://zenodo.org/records?/([a-zA-Z0-9_.-]+)"
-ZENODO_DOI_URL_REGEX = r"https:\/\/doi\.org\/10\.\d+\/[a-zA-Z0-9\._%~-]+"
+logger = logging.getLogger("Latex Matcher")
+
+N_WORDS = 10
+HIT_WORDS = "code|data|script|available|appendix|supplementary|replication|companion|artifact|artefact"
+GITHUB_REGEX = rf"^(?=.*https://(?:www\.)?github\.com/\w+/\w+)(?=(?:\S+\s+){{0,{N_WORDS}}}(?:{HIT_WORDS})).*$|^.*(?:{HIT_WORDS})(?:\S+\s+){{0,{N_WORDS}}}https://github\.com/\w+/\w+.*$|^.*https://github\.com/\w+/\w+(?:\S+\s+){{0,{N_WORDS}}}(?:{HIT_WORDS}).*$"
+ZENODO_REGEX = rf"^(?=.*https://(doi\.org/10\.5281/zenodo\.\d+|zenodo\.org/record/\d+))(?=(?:\S+\s+){{0,{N_WORDS}}}(?:{HIT_WORDS})).*$|^.*(?:{HIT_WORDS})(?:\S+\s+){{0,{N_WORDS}}}https://(doi\.org/10\.5281/zenodo\.\d+|zenodo\.org/record/\d+).*$|^.*https://(doi\.org/10\.5281/zenodo\.\d+|zenodo\.org/record/\d+)(?:\S+\s+){{0,{N_WORDS}}}(?:{HIT_WORDS}).*$"
+GITHUB_URL_REGEX = r"https?://(?:www\.)?github.com/([a-zA-Z0-9-]+)/([a-zA-Z0-9_.-]+)"
+ZENODO_URL_REGEX = r"https?://(?:www\.)?zenodo.org/records?/([a-zA-Z0-9_.-]+)"
+ZENODO_DOI_URL_REGEX = r"https://doi\.org/10\.\d+/[a-zA-Z0-9\._%~-]+"
 ARXIV_ID_REGEX = r"/(\d+\.\d+)(?:v\d+)/"
 
 
@@ -24,21 +27,33 @@ def has_zenodo_link(content):
     return re.search(ZENODO_REGEX, content, re.M)
 
 
-class TwoWaysMatcher:
+class LatexMatcher:
+    SOURCES_FOLDER = "sources"
+
     def __init__(self, zenodo, github):
         self._zenodo = zenodo
         self._github = github
-        self._merger = Merger()
+
+    def clean_merged(self):
+        self._merger.clean(self.SOURCES_FOLDER)
+
+    def merge_latex(self):
+        self._merger.run(self.SOURCES_FOLDER)
 
     def run(self):
         results_with_code = dict()
         results_without_code = set()
 
-        # self._merger.run("sources")
+        merged_filepaths = os.path.join(self.SOURCES_FOLDER, "**", "merged.tex")
+        filepaths = glob.glob(merged_filepaths, recursive=True)
+        if not filepaths:
+            raise LatexMergedNotFound()
 
-        merged_filepaths = os.path.join("sources", "**", "merged.tex")
-        for filepath in glob.glob(merged_filepaths, recursive=True):
-            logger.info(f"Working on `{filepath}`")
+        i = found_github = found_zenodo = 0
+        total = len(filepaths)
+        for filepath in filepaths:
+            i += 1
+            logger.info(f"Working on `{filepath}` - {i}/{total}")
 
             arxiv_id = re.search(ARXIV_ID_REGEX, filepath)[1]
             ARXIV_URL_REGEX = f"arxiv.org/[^/]+/{arxiv_id}"
@@ -49,11 +64,22 @@ class TwoWaysMatcher:
                 github_matched = has_github_link(text)
                 zenodo_matched = has_zenodo_link(text)
 
-                if not (github_matched or zenodo_matched):
-                    results_without_code.add(filepath)
+                if not github_matched and not zenodo_matched:
+                    results_without_code.add(arxiv_id)
                     continue
 
-                results_with_code.setdefault(filepath, dict())
+                results_with_code.setdefault(
+                    arxiv_id,
+                    {
+                        "github": "",
+                        "github_url": "",
+                        "arxiv in GitHub": "",
+                        "zenodo": "",
+                        "zenodo_url": "",
+                        "arxiv in Zenodo": "",
+                    },
+                )
+                results = results_with_code[arxiv_id]
                 if github_matched:
                     paragraph = github_matched[0]
                     url = re.search(GITHUB_URL_REGEX, paragraph, re.M)[0]
@@ -68,7 +94,6 @@ class TwoWaysMatcher:
                         # skip if not valid GitHub repo
                         continue
 
-                    results = results_with_code[arxiv_id]
                     results["github"] = "Found"
                     results["github_url"] = correct_url
 
@@ -78,6 +103,7 @@ class TwoWaysMatcher:
                     if has_arxiv:
                         results["arxiv in GitHub"] = "Found"
                         logger.info(f"{filepath}: found arxiv link in GitHub")
+                        found_github += 1
                     else:
                         results["arxiv in GitHub"] = "Missing"
                         logger.info(f"{filepath}: not found arxiv link in GitHub")
@@ -103,6 +129,7 @@ class TwoWaysMatcher:
                     if has_arxiv:
                         results["arxiv in Zenodo"] = "Found"
                         logger.info(f"{filepath}: found arxiv link in Zenodo")
+                        found_zenodo += 1
                     else:
                         results["arxiv in Zenodo"] = "Missing"
                         logger.info(f"{filepath}: not found arxiv link in Zenodo")
@@ -112,9 +139,13 @@ class TwoWaysMatcher:
         self._github.close()
 
         logger.info(f"No code: {results_without_code}")
+        logger.info(
+            f"Total latex files: {total} | 2-ways links - GitHub: {found_github}, Zenodo: {found_zenodo}"
+        )
 
         # Dump to a CSV file
-        with open("results.csv", mode="w", newline="") as file:
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        with open(f"results_{timestamp}.csv", mode="w", newline="") as file:
             writer = csv.writer(file)
 
             # Write the header row
@@ -130,7 +161,15 @@ class TwoWaysMatcher:
             writer.writerow(header)
 
             # Write data for each key-value pair in the dictionary
-            for key, values in results_with_code.items():
-                row = [key]
-                row.extend(values.values())
+            for arxiv_id in results_with_code.keys():
+                d = results_with_code[arxiv_id]
+                row = [
+                    arxiv_id,
+                    d["github"],
+                    d["github_url"],
+                    d["arxiv in GitHub"],
+                    d["zenodo"],
+                    d["zenodo_url"],
+                    d["arxiv in Zenodo"],
+                ]
                 writer.writerow(row)

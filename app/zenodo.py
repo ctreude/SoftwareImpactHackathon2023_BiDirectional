@@ -1,6 +1,7 @@
-import requests
 import logging
 import re
+
+import requests
 
 from .doi import get_redirect_url
 from .utils import is_valid_url

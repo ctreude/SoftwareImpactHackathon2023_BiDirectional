@@ -12,8 +12,13 @@ This repository was developed as part of the [Mapping the Impact of Research Sof
 
 ## Code of Conduct
 
-Contributions to this project are subject to CZI’s Contributor Covenant [code of conduct](https://github.com/chanzuckerberg/.github/blob/master/CODE_OF_CONDUCT.md). By participating, contributors are expected to uphold this code of conduct. 
+Contributions to this project are subject to CZI’s Contributor Covenant [code of conduct](https://github.com/chanzuckerberg/.github/blob/master/CODE_OF_CONDUCT.md). By participating, contributors are expected to uphold this code of conduct.
 
 ## Reporting Security Issues
 
 If you believe you have found a security issue, please responsibly disclose by contacting the repository owner via the ‘security’ tab above.
+
+
+
+
+docker run --platform linux/amd64 -p 127.0.0.1:9998:9998 apache/tika
