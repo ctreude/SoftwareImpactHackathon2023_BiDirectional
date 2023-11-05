@@ -1,18 +1,24 @@
 import argparse
 import os
 
-from app.github import GitHubAPI
-from app.latex_matcher import LatexMatcher
-from app.latex_merger import LatexMerger
-from app.logger import setup_logger
-from app.pdf_extractor import PDFExtractor
-from app.pdf_matcher import PDFMatcher
-from app.zenodo import ZenodoAPI
+from src.arxiv import ArXiVDownloader
+from src.github import GitHubAPI
+from src.latex.latex_matcher import LatexMatcher
+from src.latex.latex_merger import LatexMerger
+from src.logger import setup_logger
+from src.pdf.pdf_extractor import PDFExtractor
+from src.pdf.pdf_matcher import PDFMatcher
+from src.zenodo import ZenodoAPI
 
 
-def download_sources(source_type, queries):
-    print("Not yet integrated. See `app.arxiv_latex.py/app.arxiv_pdfs.py`")
-    pass
+def download_sources(source_type, query, limit):
+    downloader = ArXiVDownloader()
+    if source_type == "pdf":
+        downloader.download_pdfs(query, limit)
+    elif source_type == "latex":
+        downloader.download_sources(query, limit)
+    elif source_type == "both":
+        downloader.download(query, limit)
 
 
 def run_program(run_type):
@@ -25,9 +31,9 @@ def run_program(run_type):
     zenodo = ZenodoAPI()
 
     if run_type == "pdf":
-        matcher = PDFMatcher(zenodo, github)
+        matcher = PDFMatcher(github, zenodo)
     elif run_type == "latex":
-        matcher = LatexMatcher(zenodo, github)
+        matcher = LatexMatcher(github, zenodo)
     matcher.run()
 
 
@@ -69,6 +75,12 @@ if __name__ == "__main__":
         "--query",
         required=True,
         help="Specify the query string when searching preprints to download on ArXiV.",
+    )
+    download_parser.add_argument(
+        "--limit",
+        required=False,
+        default=1000,
+        help="Specify how many PDF/Latex to download.",
     )
 
     # Run command

@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "SoftwareImpactHackathon2023-BiDirectional"
+authors = [
+    {name = "Christoph Treude", email = "ctreude@gmail.com"},
+    {name = "Nicola Tarocco", email = "ntarocco@gmail.com"},
+]
+description = "BiDirectional"
+version = "0.0.1"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+keywords = []
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.9",
+]
+dependencies = [
+    "arxiv>=1,<2",
+    "PyGithub>=2,<3",
+    "tika>=2,<3",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>7,<8",
+    "black>23,<24",
+    "isort>5,<6",
+]
+
+[project.urls]
+Repository = "https://github.com/ctreude/SoftwareImpactHackathon2023_BiDirectional"

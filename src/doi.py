@@ -13,7 +13,7 @@ DOI_URL_REGEX = r"https?:\/\/doi\.org\/10.5281/zenodo.[0-9]+"
 
 def is_valid_doi(doi):
     # Use re.match to check if the input matches the pattern
-    if re.match(DOI_REGEX, doi, re.IGNORECASE):
+    if re.match(DOI_REGEX, doi, re.I):
         return True
     else:
         return False

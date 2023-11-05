@@ -8,18 +8,18 @@ This tool provides functionality to establish and check bidirectional traceabili
 
 Starting with publications from ArXiv.org, our goal was to extract from the PDFs all links to software or dataset repositories on GitHub.com and Zenodo.org. Then, repositories have been queried to find when the ArXiv preprint's link was appearing in any of the README files on GitHub or in the record's metadata on Zenodo, confirming the bidirectional traceability.
 
-### LaTeX approach
-
-Given that preprints may contain multiple links to repositories, one of the challenges is identifying and keep only the link referring to the software or dataset used for the preprint. To tackle this, we employed relatively simple heuristics based on regular expressions. These heuristics filtered and retained only links closely associated with words such as `code`, `script`, `data,` and others.
+Given that preprints may contain multiple links to repositories, one of the challenges is to discover only the link referring to the software or dataset used for the preprint, excluding any other external link. To tackle this, we employed relatively simple heuristics based on regular expressions. These heuristics filter and retain only links appearing closely to words such as `code`, `script`, `data,` and others.
 Please note that this approach is not intended to be foolproof but rather offers a straightforward method for exploring basic traceability.
 
-The main issue with this is that links are often placed in footnotes or appendices. The text extraction from PDFs does not keep the reference between the sentence mentioning a link and the link itself. Existing software tools for extracting or comprehending PDF content, such as Tika and Grobid, did not seem to offer a solution to this problem. Large language models might be explored in the future to overcome this limitation.
+The main issue with this approach is that links in publications are often placed in footnotes or appendices. The text extraction from PDFs does not keep the reference between the sentence mentioning a link and the link itself. Existing software tools for extracting or comprehending PDF content, such as Tika and Grobid, do not seem to offer a solution to this problem. Large language models might be explored in the future to overcome this limitation.
 
-In ArXiv, about 90% of the publications also contain the original LaTeX files. These PDF sources contain the links very close to the sentence where they are mentioned (e.g. `sentence \cite{url}`). Starting from the LaTeX, we were able to extract such links and then verify the bidirectional traceability in GitHub or Zenodo.
+### LaTeX approach
+
+In ArXiv, about 90% of the publications also contain the original LaTeX files. URLs or citation links are inline in LaTeX sources, meaning that the link appears in the same sentence where it is mentioned (e.g. `sentence \cite{url}`). Starting from the LaTeX, we were able to extract the links and then verify the bidirectional traceability in GitHub or Zenodo.
 
 ### PDF approach
 
-A more basic approach explored consists in retrieving any link to GitHub or Zenodo from the PDF file, independently of where it is mentioned or its context. All repositories are then queried to verify the existence of a link to the ArXiV preprint.
+A more basic approach consists in retrieving all links to GitHub or Zenodo appearing in the PDF file, independently of where it is mentioned or its context. All repositories are then queried to verify the existence of a link to the ArXiV preprint.
 
 ### Application
 
@@ -36,7 +36,7 @@ This software is a proof-of-concept. It has simple commands:
 Install (in your virtualenv):
 
 ```bash
-pip install .
+pip install -e .[test]
 ```
 
 The typical usage will be the following:
@@ -46,19 +46,47 @@ The typical usage will be the following:
 ```bash
 python main.py download --type [pdf|latex] --query YOUR_QUERY
 ```
-Note: this is not yet functional. A first version of the scripts are available in the repo.
+Note: this is not yet functional. A first version of the scripts is available in the module `src.arxiv`.
 
-2. To enable the verification of the bidirectional traceability, the content of the PDFs need to be extracted or the multiple LaTeX files require to be merged and citations embedded:
+2. When working with PDFs, each PDF content should be extracted to get the text. With LaTeX sources,
+the multiple LaTeX files should be merged into one, embedding citations.
+
+The following commands expect to find PDFs or LaTeX sources in the local folder `pdfs` or `sources` respectively,
+and each folder should be named with the ArXiV id.
+
+Examples:
+
+```bash
+$ cd pdf
+$ ls
+2301.12169v1 2302.08664v3 2303.10131v1 2303.13729v2 2304.05766v1 2305.16365v1 2306.10019v1 2307.04291v1 2308.09637v2 2308.12079v1 2309.04197v1 2302.05564v1 2303.09727v1 2303.10439v2 2303.15684v1 2304.14628v2 2305.16591v1 2306.10021v1 2307.10793v1 2308.09940v1 2309.03914v1
+$ cd 2304.05766v1
+$ ls
+2304.05766v1.pdf
+```
+
+```bash
+$ cd sources
+$ ls
+2301.12169v1 2302.08664v3 2303.10131v1 2303.13729v2 2304.05766v1 2305.16365v1 2306.10019v1 2307.04291v1 2308.09637v2 2308.12079v1 2309.04197v1 2302.05564v1 2303.09727v1 2303.10439v2 2303.15684v1 2304.14628v2 2305.16591v1 2306.10021v1 2307.10793v1 2308.09940v1 2309.03914v1
+$ cd 2304.05766v1
+$ ls
+ieee       main.bbl   main.tex
+```
+
+The command will create an `extracted.txt` or `merged.tex` respectively:
+
 ```bash
 python main.py extract-pdfs
 python main.py merge-latex
 ```
 Note: for the PDF extraction, run the `Tika` server, for example with Docker: `docker run -p 127.0.0.1:9998:9998 apache/tika`
 
-3. Finally, run the analysis:
+3. Finally, run it:
 ```bash
 python main.py run --type [pdf|latex]
 ```
+Note: you need a GitHub token. Get a new token at https://github.com/settings/tokens and set the env var `GITHUB_TOKEN`.
 
 The output is logged in files in the `logs` folder, and the results are stored in a `.csv` file.
 
@@ -67,10 +95,14 @@ You can clean generated files by running:
 python main.py clean --type [pdf|latex]
 ```
 
-## Possible evolutions
+## Possible enhancements
 
-* Improve the heuristics to detect what is the right link, pointing to the code or dataset used by the paper. LLMs techniques might be explored for this task.
+* The regex for GitHub only expects the main repo URL. They should be changed to take into account if the link
+is pointing to a commit, a tag or a branch.
+* If the same link is found multiple times in the same publication, it is not checked only once.
+* Extract the list of the most common words close to a link to a repo, to have a good set of keywords to use.
 * Run the verification on a much larger dataset of PDFs or LaTeX files.
+* Improve the heuristics to detect what is the right link, pointing to the code or dataset used by the paper. LLMs techniques might be explored for this task.
 
 ## About this project
 
