@@ -11,7 +11,7 @@ from ..pub_finder import PubFinder
 
 logger = logging.getLogger("Latex Matcher")
 
-ARXIV_ID_REGEX = r"/(\d+\.\d+)(?:v\d+)/"
+ARXIV_ID_REGEX = r"/(\d+\.\d+)(:v\d+)?/"
 
 
 class LatexMatcher:
