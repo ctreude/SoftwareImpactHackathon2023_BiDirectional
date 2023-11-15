@@ -22,7 +22,7 @@ KEYWORDS = [
 URLS_REGEX = [
     (
         Repos.GITHUB.value,
-        "https?://(?:www\.)?github\.com/([a-zA-Z0-9]+)/([a-zA-Z0-9]+)",
+        "https?://(?:www\.)?github\.com/([a-zA-Z0-9_.-]+)/([a-zA-Z0-9_.-]+)",
     ),  # FIXME: review allowed org/repo names in GitHub
     (Repos.ZENODO_RECORD.value, "https?://zenodo\.org/records?/(\d+)"),
     (Repos.ZENODO_DOI.value, "(https?://doi\.org/10\.5281/zenodo\.\d+)"),
