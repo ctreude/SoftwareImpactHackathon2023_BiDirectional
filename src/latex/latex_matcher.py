@@ -12,7 +12,7 @@ from ..pub_finder import PubFinder
 logger = logging.getLogger("Latex Matcher")
 
 ARXIV_ID_REGEX = r"/(\d+\.\d+)(:v\d+)?/"
-
+#ARXIV_ID_REGEX = r"/(\d+\.\d+)(:v\d+)?/"
 
 class LatexMatcher:
     SOURCES_FOLDER = "sources"
@@ -42,8 +42,10 @@ class LatexMatcher:
         for filepath in filepaths:
             i += 1
             logger.info(f"Working on `{filepath}` - {i}/{total}")
-
-            arxiv_id = re.search(ARXIV_ID_REGEX, filepath)[1]
+            match = re.search(ARXIV_ID_REGEX, filepath)
+            if not match:
+                continue
+            arxiv_id = match[1]
             results.setdefault(arxiv_id, {})
             with open(filepath) as fp:
                 text = fp.read()
