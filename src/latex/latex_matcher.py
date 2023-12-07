@@ -49,9 +49,15 @@ class LatexMatcher:
             results.setdefault(arxiv_id, {})
             with open(filepath) as fp:
                 text = fp.read()
-
-                repos_ids = repos_finder.find(arxiv_id, text, contextualized=True)
-                results[arxiv_id] = pub_finder.find(arxiv_id, repos_ids)
+                if not (repos_ids := repos_finder.find(arxiv_id, text, contextualized=False)):
+                    logging.error(f"latex_matcher: No repo ids found in {arxiv_id}")
+                    continue
+                if not (found_publis := pub_finder.find(arxiv_id, repos_ids)):
+                    logging.error(f"latex_matcher: No publications ids found in {arxiv_id}")
+                    continue
+                results[arxiv_id] = found_publis
+                # repos_ids = repos_finder.find(arxiv_id, text, contextualized=True)
+                # results[arxiv_id] = pub_finder.find(arxiv_id, repos_ids)
 
         self._github.close()
 
