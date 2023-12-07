@@ -33,12 +33,22 @@ class PubFinder:
 
     def _zenodo(self, publication_id, _id):
         recid_or_doi = _id
-        record_text, correct_url = self._zenodo_apis.get_record(recid_or_doi)
-        return record_text, correct_url
+        if zenodo_record := self._zenodo_apis.get_record(recid_or_doi):
+            record_text, correct_url = zenodo_record
+            return record_text, correct_url
+        logging.error("_zenodo: Zenodo API has returned a Non-usable value")
+        return "", ""
 
     def find(self, publication_id, repo_ids):
         """Find publication URL in repos metadata or files."""
         results = {}
+        if not repo_ids:
+            logging.error(f"pub_finder_find Error: no ID's given for repos: '{repo_ids}'.")
+            return results
+        if not publication_id:
+            logging.error("pub_finder_find Error: The publication ID is empty or None.")
+            return results
+
         arxiv_url = ARXIV_URL_REGEX.format(arxiv_id=publication_id)
         for repo, ids in repo_ids.items():
             if repo == Repos.GITHUB.value:
