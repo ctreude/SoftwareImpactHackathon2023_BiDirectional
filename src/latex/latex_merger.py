@@ -40,17 +40,27 @@ class LatexMerger:
             merged_dirs.append(dir)
             i += 1
             logger.debug(f"Merging Latex content {i}/{total}")
+
+            tex_filespath = os.path.join(input_folder, dir, "**", "*.tex")
+            all_latex_filepaths = glob.glob(tex_filespath, recursive=True)
+            # Do not create file if there are no latex files within the directory
+            if not all_latex_filepaths:
+                logging.debug(f"This directory has no latex files within it, skipping it {dir}")
+                continue
             with open(merged_filepath, "w") as output:
-                tex_filespath = os.path.join(input_folder, dir, "**", "*.tex")
-                for latex_filepath in glob.glob(tex_filespath, recursive=True):
+                for latex_filepath in all_latex_filepaths:
                     with open(latex_filepath, "r", errors="replace") as input_file:
                         output.write(input_file.read() + "\n")
         return merged_dirs
 
     def _get_citation_url(self, bbl_file):
         """Parse a BBL file and return a map of `bibitem key` -> `url`."""
-        with open(bbl_file, "r") as file:
-            content = file.read()
+        try:
+            with open(bbl_file, "r") as file:
+                content = file.read()
+        except Exception as e:
+            logging.error(f" _get_citation_url: Failed to open file {bbl_file}")
+            return None
 
         citation_data = {}
         for _match in re.finditer(BIBITEM_REGEX, content):
@@ -67,6 +77,10 @@ class LatexMerger:
 
     def _replace_cite_with_bibitem(self, merged_tex, citation_data):
         """Replace `cite` with the `bibitem url`."""
+        if not os.path.exists(merged_tex):
+            logging.warning(f"_replace_cite_with_bibitem: Merged file does not exist for: {merged_tex}")
+            return
+
         with open(merged_tex, "r") as file:
             tex_content = file.read()
 
@@ -89,8 +103,8 @@ class LatexMerger:
             # extra citations
             citation_urls = {}
             for bbl_filepath in glob.glob(bbls_filespath, recursive=True):
-                citation_urls.update(self._get_citation_url(bbl_filepath))
-
+                if citation_url := self._get_citation_url(bbl_filepath):
+                    citation_urls.update(citation_url)
             # Process the merged.tex file to replace \cite with \bibitem
             self._replace_cite_with_bibitem(merged_filepath, citation_urls)
 
