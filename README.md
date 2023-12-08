@@ -1,5 +1,7 @@
 # Bidirectional Paper-Repository Traceability
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10303607.svg)](https://doi.org/10.5281/zenodo.10303607)
+
 There's a gap between academic papers and data/code repositories due to the absence of bidirectional links. We propose to develop a tool that connects scientific papers to their relevant GitHub repositories and vice versa. Our approach involves devising algorithms to search both academic platforms and GitHub for mutual references, integrating features into the tool for automatic link creation, and incorporating capabilities to auto-comment on platforms like arXiv when a corresponding GitHub repository is detected. Ultimately, we aim to promote the significance of traceability, emphasizing its importance to both the academic and developer communities.
 
 This tool provides functionality to establish and check bidirectional traceability between academic papers and their respective code repositories. It supports operations with PDF and LaTeX files, specifically focusing on ArXiV sources.
